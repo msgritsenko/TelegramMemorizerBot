@@ -46,7 +46,8 @@ else
 }
 
 using var db = new BotDbContext(optionsBuilder.Options);
-
+db.Database.EnsureCreated();
+var count = await db.Users.CountAsync();
 var botClient = new TelegramBotClient(telegramKey);
 
 using CancellationTokenSource cts = new();
