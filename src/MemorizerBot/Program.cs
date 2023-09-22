@@ -1,6 +1,7 @@
 ﻿using Domain;
 using MemorizerBot.Pages;
 using MemorizerBot.Repositories;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Persistance;
@@ -28,16 +29,21 @@ if (string.IsNullOrEmpty(sqLitePath))
 {
     sqLitePath = config["SQLitePath"];
 }
-if (string.IsNullOrEmpty(sqLitePath))
-{
-    sqLitePath = ":memory:";
-}
-
 
 // work part
 var optionsBuilder = new DbContextOptionsBuilder<BotDbContext>();
-optionsBuilder
-    .UseSqlite($"Data Source={sqLitePath}");
+if (!string.IsNullOrEmpty(sqLitePath))
+{
+    optionsBuilder = optionsBuilder
+        .UseSqlite($"Data Source={sqLitePath}");
+}
+else
+{
+    var connection = new SqliteConnection("Filename=:memory:");
+    connection.Open();
+    optionsBuilder = optionsBuilder
+        .UseSqlite(connection);
+}
 
 using var db = new BotDbContext(optionsBuilder.Options);
 
