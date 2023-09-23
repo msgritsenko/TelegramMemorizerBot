@@ -47,7 +47,6 @@ else
 
 using var db = new BotDbContext(optionsBuilder.Options);
 db.Database.EnsureCreated();
-var count = await db.Users.CountAsync();
 var botClient = new TelegramBotClient(telegramKey);
 
 using CancellationTokenSource cts = new();
@@ -71,6 +70,14 @@ botClient.StartReceiving(
 );
 
 var me = await botClient.GetMeAsync();
+BotCommand[] command = new[]
+{
+    new BotCommand() { Command = "/start", Description = "Start memorize cards" },
+    new BotCommand() { Command = "/addchannel", Description = "Add new channel" },
+    new BotCommand() { Command = "/addcard", Description = "Add new channel" },
+};
+
+await botClient.SetMyCommandsAsync(command);
 
 Console.WriteLine($"Start listening for @{me.Username}");
 
