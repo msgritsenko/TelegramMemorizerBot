@@ -12,7 +12,7 @@ internal class QuestionsRepository
         _dbContext = dbContext;
     }
 
-    public BotQuestion? GetNextQuestion(IReadOnlyCollection<BotChannel> channels)
+    public BotQuestion? GetNextQuestion(IReadOnlyCollection<BotChannel> channels, int currentQuestionId)
     {
         if (channels.Count == 0)
             return null;
@@ -25,11 +25,12 @@ internal class QuestionsRepository
 
             var question = GetNextQuestion(channel);
 
-            if (question != null)
+            if (question != null && question.Id != currentQuestionId)
             {
                 return question;
             }
         }
+
         return null;
     }
 

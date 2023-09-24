@@ -38,6 +38,13 @@ internal class Bot
             userProvider.CurrentUser = user;
             // ----
 
+            BotCallback botCallBack = BotCallback.FromJsonString(callback.Data);
+            
+            var widgetType = Widgets.First(w => w.Name == botCallBack.WidgetName);
+            var widget = scope.Resolve(widgetType) as BotWidget;
+            
+            await widget.Callback(botCallBack, callback);
+
             return;
         }
 

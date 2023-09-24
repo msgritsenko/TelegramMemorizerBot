@@ -1,4 +1,5 @@
 ﻿using Telegram.Bot;
+using Telegram.Bot.Types;
 
 namespace MemorizerBot.Widgets;
 
@@ -19,5 +20,12 @@ internal abstract class BotWidget
     /// <summary>
     /// Edits an existing message.
     /// </summary>
-    public abstract Task Callback();
+    public abstract Task Callback(BotCallback botCallback, CallbackQuery callbackQuery);
+
+    protected string BuildCallBack<T>(string action, T payload)
+    {
+        var botCallback = BotCallback.Build(this.GetType().Name, action, payload);
+
+        return botCallback.ToJsonString();
+    }
 }
