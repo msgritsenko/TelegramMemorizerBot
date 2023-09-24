@@ -16,9 +16,6 @@ public class BotQuestionConfiguration : IEntityTypeConfiguration<BotQuestion>
             .IsRequired();
 
         builder
-            .Property(x => x.Answer);
-
-        builder
             .HasOne<BotChannel>()
             .WithMany()
             .HasForeignKey(x => x.BotChannelid);
