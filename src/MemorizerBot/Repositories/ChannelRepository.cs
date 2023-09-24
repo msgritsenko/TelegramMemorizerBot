@@ -12,7 +12,7 @@ internal class ChannelRepository
         _dbContext = dbContext;
     }
 
-    public BotChannel GetById (int id)
+    public BotChannel GetById(int id)
     {
         return _dbContext.Channels.First(c => c.Id == id);
     }
@@ -22,7 +22,7 @@ internal class ChannelRepository
         var channel = _dbContext.Channels
             .Where(c => c.Id > botChannel.Id)
             .FirstOrDefault();
-        
+
         if (channel != null)
             return channel;
 

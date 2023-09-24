@@ -1,6 +1,5 @@
 ﻿using Domain;
 using Persistance;
-using System.Threading.Channels;
 
 namespace MemorizerBot.Repositories;
 
