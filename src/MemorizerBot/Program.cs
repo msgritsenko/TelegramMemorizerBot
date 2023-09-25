@@ -38,6 +38,7 @@ var bot = await BotBuilder.Build(
         services.AddScoped<BotReplyableMessagesRepository>();
 
         services.AddTransient<WorkWidget>();
+        services.AddTransient<AddChannelWidget>();
     },
     containerBuilder: (container, cfg) =>
     {
@@ -55,11 +56,13 @@ var bot = await BotBuilder.Build(
         var addCard = new BotCommand() { Command = "/addcard", Description = "Add new channel" };
         
         bot.GlobalCommands.Add((start, (bot, scope) => bot.Start<WorkWidget>(scope)));
+        bot.GlobalCommands.Add((addChannel, (bot, scope) => bot.Start<AddChannelWidget>(scope)));
     },
     cts.Token);
 
 // temporary solution
 bot.Widgets.Add(typeof(WorkWidget));
+bot.Widgets.Add(typeof(AddChannelWidget));
 
 Console.ReadLine();
 

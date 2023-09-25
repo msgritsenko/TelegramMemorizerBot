@@ -2,6 +2,7 @@
 using Domain;
 using MemorizerBot.Repositories;
 using MemorizerBot.Widgets;
+using Microsoft.EntityFrameworkCore;
 using Persistance;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -40,10 +41,10 @@ internal class Bot
             // ----
 
             BotCallbackData botCallBack = BotCallbackData.FromJsonString(callback.Data);
-            
+
             var widgetType = Widgets.First(w => w.Name == botCallBack.WidgetName);
             var widget = scope.Resolve(widgetType) as BotWidget;
-            
+
             await widget.Callback(botCallBack, callback);
 
             return;
@@ -61,17 +62,27 @@ internal class Bot
                 // ----
                 var replyableRepository = scope.Resolve<BotReplyableMessagesRepository>();
                 var questionsRepository = scope.Resolve<BotQuestionsRepository>();
-                
+
                 var db = scope.Resolve<BotDbContext>();
 
                 var originalMsg = replyableRepository.Get(replyMessage.MessageId);
-                
+
                 if (originalMsg.Type == BotReplyableMessageType.ShowedCard)
                 {
                     var question = questionsRepository.GetById(originalMsg.Payload);
                     question.Query = message.Text;
 
                     await db.SaveChangesAsync();
+                }
+
+                if (originalMsg.Type == BotReplyableMessageType.NewChannnel)
+                {
+                    if (!await db.Channels.AnyAsync(c => c.Name == message.Text))
+                    {
+                        await db.Channels.AddAsync(new BotChannel { Name = message.Text });
+
+                        await db.SaveChangesAsync();
+                    }
                 }
 
                 return;
