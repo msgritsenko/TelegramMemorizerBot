@@ -9,11 +9,11 @@ namespace MemorizerBot.Widgets;
 
 internal class WorkWidget : BotWidget
 {
-    private readonly QuestionsRepository _questionsRepository;
+    private readonly BotQuestionsRepository _questionsRepository;
     private readonly BotUser _user;
 
     public WorkWidget(
-        QuestionsRepository questionsRepository,
+        BotQuestionsRepository questionsRepository,
         BotUserProvider userProvider,
         ITelegramBotClient botClient)
         : base(botClient)

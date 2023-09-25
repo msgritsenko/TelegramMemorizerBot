@@ -9,11 +9,11 @@ namespace MemorizerBot.Widgets;
 
 internal class SetupPage
 {
-    private readonly ChannelRepository _channelRepository;
+    private readonly BotChannelRepository _channelRepository;
     private readonly BotUser _user;
     private readonly BotChannel _currentChannel;
 
-    public SetupPage(ChannelRepository channelRepository, BotUser user, BotChannel current)
+    public SetupPage(BotChannelRepository channelRepository, BotUser user, BotChannel current)
     {
         _channelRepository = channelRepository;
         _user = user;

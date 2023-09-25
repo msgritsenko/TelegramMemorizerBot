@@ -3,11 +3,11 @@ using Persistance;
 
 namespace MemorizerBot.Repositories;
 
-internal class ChannelRepository
+internal class BotChannelRepository
 {
     private readonly BotDbContext _dbContext;
 
-    public ChannelRepository(BotDbContext dbContext)
+    public BotChannelRepository(BotDbContext dbContext)
     {
         _dbContext = dbContext;
     }

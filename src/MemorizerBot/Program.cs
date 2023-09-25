@@ -32,9 +32,9 @@ var bot = await BotBuilder.Build(
             }
         });
 
-        services.AddScoped<ChannelRepository>();
+        services.AddScoped<BotChannelRepository>();
         services.AddScoped<BotUserRepository>();
-        services.AddScoped<QuestionsRepository>();
+        services.AddScoped<BotQuestionsRepository>();
 
         services.AddTransient<WorkWidget>();
     },
