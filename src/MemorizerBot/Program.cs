@@ -39,6 +39,7 @@ var bot = await BotBuilder.Build(
 
         services.AddTransient<WorkWidget>();
         services.AddTransient<AddChannelWidget>();
+        services.AddTransient<SetupPage>();
     },
     containerBuilder: (container, cfg) =>
     {
@@ -53,16 +54,19 @@ var bot = await BotBuilder.Build(
     {
         var start = new BotCommand() { Command = "/start", Description = "Start memorize cards" };
         var addChannel = new BotCommand() { Command = "/addchannel", Description = "Add new channel" };
-        var addCard = new BotCommand() { Command = "/addcard", Description = "Add new channel" };
-        
+        var selectChannels = new BotCommand() { Command = "/selectchannels", Description = "Select favorite channels" };
+        var addCard = new BotCommand() { Command = "/addcard", Description = "Add new card" };
+
         bot.GlobalCommands.Add((start, (bot, scope) => bot.Start<WorkWidget>(scope)));
         bot.GlobalCommands.Add((addChannel, (bot, scope) => bot.Start<AddChannelWidget>(scope)));
+        bot.GlobalCommands.Add((selectChannels, (bot, scope) => bot.Start<SetupPage>(scope)));
     },
     cts.Token);
 
 // temporary solution
 bot.Widgets.Add(typeof(WorkWidget));
 bot.Widgets.Add(typeof(AddChannelWidget));
+bot.Widgets.Add(typeof(SetupPage));
 
 Console.ReadLine();
 

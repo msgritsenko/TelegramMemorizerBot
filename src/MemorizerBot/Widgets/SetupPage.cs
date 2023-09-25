@@ -1,110 +1,156 @@
-﻿using Telegram.Bot;
-using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bot.Types;
-using Domain;
+﻿using Domain;
 using MemorizerBot.Repositories;
-using MemorizerBot.Widgets;
+using Persistance;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace MemorizerBot.Widgets;
 
-internal class SetupPage
+internal class SetupPage : BotWidget
 {
     private readonly BotChannelRepository _channelRepository;
     private readonly BotUser _user;
-    private readonly BotChannel _currentChannel;
+    private readonly BotDbContext _dbContext;
 
-    public SetupPage(BotChannelRepository channelRepository, BotUser user, BotChannel current)
+    public SetupPage(
+        BotChannelRepository channelRepository,
+        BotUserProvider userProvider,
+        ITelegramBotClient botClient,
+        BotDbContext dbContext)
+        : base(botClient)
     {
         _channelRepository = channelRepository;
-        _user = user;
-        _currentChannel = current;
+        _user = userProvider.CurrentUser;
+        _dbContext = dbContext;
     }
 
-    public async Task ReplacePage(ITelegramBotClient botClient, Chat chat, Message message, bool gotoNext = false)
+    public override async Task Start()
     {
-        BotChannel nextChannel = gotoNext ? _channelRepository.GetNext(_currentChannel) : _currentChannel;
+        BotChannel nextChannel = _channelRepository.GetNext(0);
+
+        if (nextChannel == null)
+        {
+            return;
+        }
 
         bool starred = _user.Channels.Contains(nextChannel);
-
-        var inlineKeyboard = starred ? inlineUnstarKeyboard(nextChannel.Id) : inlineStarKeyboard(nextChannel.Id);
         var channelName = nextChannel.Name + (starred ? "  ★" : "");
 
-        try
-        {
-            Message sentMessage = await botClient.EditMessageTextAsync(
-                chatId: chat.Id,
-                messageId: message.MessageId,
-                text: channelName, //MarkdownHelpers.ToMarkdown(channelName),
-                                   //parseMode: Telegram.Bot.Types.Enums.ParseMode.MarkdownV2,
-            replyMarkup: inlineKeyboard);
-        }
-        catch (Exception)
-        {
-        }
+        var inlineKeyboard = starred ? inlineUnstarKeyboard(nextChannel.Id) : inlineStarKeyboard(nextChannel.Id);
+
+        Message sentMessage = await _botClient.SendTextMessageAsync(
+              chatId: _user.ChatId,
+              text: channelName,
+              replyMarkup: inlineKeyboard);
     }
 
     private InlineKeyboardMarkup inlineStarKeyboard(int channelId) => new(
         new[]
         {
-        InlineKeyboardButton.WithCallbackData(text: "назад", callbackData: "Setup;back"),
-        InlineKeyboardButton.WithCallbackData(text: "следить", callbackData: $"Setup;star;{channelId}"),
-        InlineKeyboardButton.WithCallbackData(text: "дальше", callbackData: $"Setup;next;{channelId}"),
+        InlineKeyboardButton.WithCallbackData(text: "стоп", callbackData: BuildCallBack(nameof(Quit), channelId)),
+        InlineKeyboardButton.WithCallbackData(text: "следить", callbackData: BuildCallBack(nameof(Star), channelId)),
+        InlineKeyboardButton.WithCallbackData(text: "дальше", callbackData: BuildCallBack(nameof(Next), channelId)),
         }
     );
 
     private InlineKeyboardMarkup inlineUnstarKeyboard(int channelId) => new(
         new[]
         {
-        InlineKeyboardButton.WithCallbackData(text: "назад", callbackData: "Setup;back"),
-        InlineKeyboardButton.WithCallbackData(text: "забыть", callbackData: $"Setup;unstar;{channelId}"),
-        InlineKeyboardButton.WithCallbackData(text: "дальше", callbackData: $"Setup;next;{channelId}"),
+        InlineKeyboardButton.WithCallbackData(text: "стоп", callbackData: BuildCallBack(nameof(Quit), channelId)),
+        InlineKeyboardButton.WithCallbackData(text: "забыть", callbackData: BuildCallBack(nameof(UnStar), channelId)),
+        InlineKeyboardButton.WithCallbackData(text: "дальше", callbackData: BuildCallBack(nameof(Next), channelId)),
         }
     );
+
+    public override Task Callback(BotCallbackData botCallback, CallbackQuery callbackQuery)
+    {
+        return botCallback.Action switch
+        {
+            nameof(Quit) => Quit(botCallback.GetPayload<int>(), callbackQuery),
+            nameof(Next) => Next(botCallback.GetPayload<int>(), callbackQuery),
+            nameof(Star) => Star(botCallback.GetPayload<int>(), callbackQuery),
+            nameof(UnStar) => UnStar(botCallback.GetPayload<int>(), callbackQuery),
+
+            _ => Task.CompletedTask,
+        };
+    }
+
+    private async Task Next(int currentQuestionId, CallbackQuery callbackQuery)
+    {
+        BotChannel nextChannel = _channelRepository.GetNext(currentQuestionId);
+
+        bool starred = _user.Channels.Contains(nextChannel);
+        var channelName = nextChannel.Name + (starred ? "  ★" : "");
+
+        var inlineKeyboard = starred ? inlineUnstarKeyboard(nextChannel.Id) : inlineStarKeyboard(nextChannel.Id);
+
+        Message sentMessage = await _botClient.EditMessageTextAsync(
+               chatId: _user.ChatId,
+               messageId: callbackQuery.Message.MessageId,
+
+               text: channelName,
+               replyMarkup: inlineKeyboard);
+    }
+
+    private async Task Quit(int currentQuestionId, CallbackQuery callbackQuery)
+    {
+        BotChannel nextChannel = _channelRepository.GetById(currentQuestionId);
+
+        bool starred = _user.Channels.Contains(nextChannel);
+        var channelName = nextChannel.Name + (starred ? "  ★" : "");
+
+        Message sentMessage = await _botClient.EditMessageTextAsync(
+               chatId: _user.ChatId,
+               messageId: callbackQuery.Message.MessageId,
+
+               text: channelName,
+               replyMarkup: null);
+    }
+
+    private async Task Star(int currentQuestionId, CallbackQuery callbackQuery)
+    {
+        var botChannel = _channelRepository.GetById(currentQuestionId);
+
+        _user.Channels.Add(botChannel);
+        await _dbContext.SaveChangesAsync();
+
+        BotChannel nextChannel = _channelRepository.GetById(currentQuestionId);
+
+        bool starred = _user.Channels.Contains(nextChannel);
+        var channelName = nextChannel.Name + (starred ? "  ★" : "");
+
+        var inlineKeyboard = starred ? inlineUnstarKeyboard(nextChannel.Id) : inlineStarKeyboard(nextChannel.Id);
+
+        Message sentMessage = await _botClient.EditMessageTextAsync(
+               chatId: _user.ChatId,
+               messageId: callbackQuery.Message.MessageId,
+
+               text: channelName,
+               replyMarkup: inlineKeyboard);
+    }
+
+    private async Task UnStar(int currentQuestionId, CallbackQuery callbackQuery)
+    {
+        var botChannel = _channelRepository.GetById(currentQuestionId);
+
+        _user.Channels.Remove(botChannel);
+        await _dbContext.SaveChangesAsync();
+
+        await Next(currentQuestionId, callbackQuery);
+
+        BotChannel nextChannel = _channelRepository.GetById(currentQuestionId);
+
+        bool starred = _user.Channels.Contains(nextChannel);
+        var channelName = nextChannel.Name + (starred ? "  ★" : "");
+
+        var inlineKeyboard = starred ? inlineUnstarKeyboard(nextChannel.Id) : inlineStarKeyboard(nextChannel.Id);
+
+        Message sentMessage = await _botClient.EditMessageTextAsync(
+               chatId: _user.ChatId,
+               messageId: callbackQuery.Message.MessageId,
+
+               text: channelName,
+               replyMarkup: inlineKeyboard);
+    }
 }
-
-//    if (callback.Data.StartsWith("Setup"))
-//        {
-//            if (callback.Data.StartsWith("Setup;next"))
-//            {
-//                var items = callback.Data.Split(';', StringSplitOptions.RemoveEmptyEntries);
-//    int botchannelId = int.Parse(items[2]);
-//    var botChannel = channelRepository.GetById(botchannelId);
-
-//    var setupPage = new SetupPage(channelRepository, user, botChannel);
-//    await setupPage.ReplacePage(botClient, callback.Message.Chat, callback.Message, true);
-//}
-
-//            if (callback.Data.StartsWith("Setup;star"))
-//            {
-//                var items = callback.Data.Split(';', StringSplitOptions.RemoveEmptyEntries);
-//int botchannelId = int.Parse(items[2]);
-//var botChannel = channelRepository.GetById(botchannelId);
-
-//user.Channels.Add(botChannel);
-//                db.SaveChanges();
-
-//                var setupPage = new SetupPage(channelRepository, user, botChannel);
-//await setupPage.ReplacePage(botClient, callback.Message.Chat, callback.Message);
-//            }
-
-//            if (callback.Data.StartsWith("Setup;unstar"))
-//{
-//    var items = callback.Data.Split(';', StringSplitOptions.RemoveEmptyEntries);
-//    int botchannelId = int.Parse(items[2]);
-//    var botChannel = channelRepository.GetById(botchannelId);
-
-//    user.Channels.Remove(botChannel);
-
-//    db.SaveChanges();
-
-//    var setupPage = new SetupPage(channelRepository, user, botChannel);
-//    await setupPage.ReplacePage(botClient, callback.Message.Chat, callback.Message);
-//}
-
-//if (callback.Data == "Setup;back")
-//{
-//    var welcomePage = new WelcomePage();
-//    await welcomePage.ReplacePage(botClient, callback.Message.Chat, callback.Message);
-//}
-//        }
-//}

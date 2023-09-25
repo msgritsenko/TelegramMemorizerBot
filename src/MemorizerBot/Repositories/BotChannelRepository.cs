@@ -19,8 +19,12 @@ internal class BotChannelRepository
 
     public BotChannel GetNext(BotChannel botChannel)
     {
+        return GetNext(botChannel.Id);
+    }
+    public BotChannel GetNext(int botChannelId)
+    {
         var channel = _dbContext.Channels
-            .Where(c => c.Id > botChannel.Id)
+            .Where(c => c.Id > botChannelId)
             .FirstOrDefault();
 
         if (channel != null)
