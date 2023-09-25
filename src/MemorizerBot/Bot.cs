@@ -2,6 +2,7 @@
 using Domain;
 using MemorizerBot.Repositories;
 using MemorizerBot.Widgets;
+using Persistance;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -10,7 +11,7 @@ namespace MemorizerBot;
 
 internal class Bot
 {
-    public List<(BotCommand, Action<Bot, ILifetimeScope>)> GlobalCommands { get; set; } = new List<(BotCommand, Action<Bot, ILifetimeScope>)>();
+    public List<(BotCommand, Func<Bot, ILifetimeScope, Task>)> GlobalCommands { get; set; } = new List<(BotCommand, Func<Bot, ILifetimeScope, Task>)>();
 
     public List<Type> Widgets { get; set; } = new List<Type>();
 
@@ -18,11 +19,11 @@ internal class Bot
 
     public Bot() { }
 
-    public void Start<TWidget>(ILifetimeScope scope) where TWidget : BotWidget
+    public async Task Start<TWidget>(ILifetimeScope scope) where TWidget : BotWidget
     {
         // current scope
         var widget = scope.Resolve<TWidget>();
-        widget.Start();
+        await widget.Start();
     }
 
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -38,7 +39,7 @@ internal class Bot
             userProvider.CurrentUser = user;
             // ----
 
-            BotCallback botCallBack = BotCallback.FromJsonString(callback.Data);
+            BotCallbackData botCallBack = BotCallbackData.FromJsonString(callback.Data);
             
             var widgetType = Widgets.First(w => w.Name == botCallBack.WidgetName);
             var widget = scope.Resolve(widgetType) as BotWidget;
@@ -53,24 +54,50 @@ internal class Bot
             if (message.From == null || message.From.IsBot == true)
                 return;
 
+
+            if (message.ReplyToMessage is { } replyMessage)
+            {
+                using var scope = Container.BeginLifetimeScope();
+                // ----
+                var replyableRepository = scope.Resolve<BotReplyableMessagesRepository>();
+                var questionsRepository = scope.Resolve<BotQuestionsRepository>();
+                
+                var db = scope.Resolve<BotDbContext>();
+
+                var originalMsg = replyableRepository.Get(replyMessage.MessageId);
+                
+                if (originalMsg.Type == BotReplyableMessageType.ShowedCard)
+                {
+                    var question = questionsRepository.GetById(originalMsg.Payload);
+                    question.Query = message.Text;
+
+                    await db.SaveChangesAsync();
+                }
+
+                return;
+            }
+
+
             var commandExists = GlobalCommands.Any(c => c.Item1.Command.Equals(message.Text, StringComparison.Ordinal));
             if (commandExists == false)
             {
                 return;
             }
+            else
+            {
+                (BotCommand cmd, Func<Bot, ILifetimeScope, Task> action) = GlobalCommands.First(c => c.Item1.Command.Equals(message.Text, StringComparison.Ordinal));
 
-            (BotCommand cmd, Action<Bot, ILifetimeScope> action) = GlobalCommands.First(c => c.Item1.Command.Equals(message.Text, StringComparison.Ordinal));
+                using var scope = Container.BeginLifetimeScope();
+                // ----
+                var userRepository = scope.Resolve<BotUserRepository>();
+                var userProvider = scope.Resolve<BotUserProvider>();
 
-            using var scope = Container.BeginLifetimeScope();
-            // ----
-            var userRepository = scope.Resolve<BotUserRepository>();
-            var userProvider = scope.Resolve<BotUserProvider>();
+                BotUser user = userRepository.GetOrCreate(message.From.Id, message.Chat.Id);
+                userProvider.CurrentUser = user;
+                // ----
 
-            BotUser user = userRepository.GetOrCreate(message.From.Id, message.Chat.Id);
-            userProvider.CurrentUser = user;
-            // ----
-
-            action(this, scope);
+                await action(this, scope);
+            }
         }
     }
 

@@ -20,11 +20,11 @@ internal abstract class BotWidget
     /// <summary>
     /// Edits an existing message.
     /// </summary>
-    public abstract Task Callback(BotCallback botCallback, CallbackQuery callbackQuery);
+    public abstract Task Callback(BotCallbackData botCallback, CallbackQuery callbackQuery);
 
     protected string BuildCallBack<T>(string action, T payload)
     {
-        var botCallback = BotCallback.Build(this.GetType().Name, action, payload);
+        var botCallback = BotCallbackData.Build(this.GetType().Name, action, payload);
 
         return botCallback.ToJsonString();
     }

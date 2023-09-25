@@ -14,5 +14,12 @@ public class BotReplyableMessageConfiguration : IEntityTypeConfiguration<BotRepl
         builder
             .Property(x => x.Type)
             .HasConversion<string>();
+
+        builder
+            .Property(x => x.MessageId);
+
+        builder
+            .HasIndex(x => x.MessageId)
+            .IsUnique();
     }
 }

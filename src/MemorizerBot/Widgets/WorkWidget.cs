@@ -9,15 +9,18 @@ namespace MemorizerBot.Widgets;
 
 internal class WorkWidget : BotWidget
 {
+    private readonly BotReplyableMessagesRepository _replyableMsgRepository;
     private readonly BotQuestionsRepository _questionsRepository;
     private readonly BotUser _user;
 
     public WorkWidget(
+        BotReplyableMessagesRepository replyableMsgRepository,
         BotQuestionsRepository questionsRepository,
         BotUserProvider userProvider,
         ITelegramBotClient botClient)
         : base(botClient)
     {
+        _replyableMsgRepository = replyableMsgRepository;
         _questionsRepository = questionsRepository;
         _user = userProvider.CurrentUser;
     }
@@ -49,9 +52,16 @@ internal class WorkWidget : BotWidget
               text: question.Query,
               //parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
               replyMarkup: inlineKeyboard);
+
+        _replyableMsgRepository.Add(msg =>
+        {
+            msg.MessageId = sentMessage.MessageId;
+            msg.Payload = question.Id;
+            msg.Type = BotReplyableMessageType.ShowedCard;
+        });
     }
 
-    public override Task Callback(BotCallback botCallback, CallbackQuery callbackQuery)
+    public override Task Callback(BotCallbackData botCallback, CallbackQuery callbackQuery)
     {
         return botCallback.Action switch
         {
@@ -82,6 +92,11 @@ internal class WorkWidget : BotWidget
                text: question.Query,
                //parseMode: Telegram.Bot.Types.Enums.ParseMode.te,
                replyMarkup: inlineKeyboard);
+
+        _replyableMsgRepository.Update(callbackQuery.Message.MessageId, msg =>
+        {
+            msg.Payload = question.Id;
+        });
     }
 
     private async Task Quit(int currentQuestionId, CallbackQuery callbackQuery)

@@ -35,6 +35,7 @@ var bot = await BotBuilder.Build(
         services.AddScoped<BotChannelRepository>();
         services.AddScoped<BotUserRepository>();
         services.AddScoped<BotQuestionsRepository>();
+        services.AddScoped<BotReplyableMessagesRepository>();
 
         services.AddTransient<WorkWidget>();
     },

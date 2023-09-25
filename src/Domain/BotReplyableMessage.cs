@@ -13,7 +13,9 @@ public class BotReplyableMessage
 
     public BotReplyableMessageType Type { get; set; }
 
+    public int MessageId { get; set; }
+
     public int Payload { get; set; }
 
-    public string PayloadJson { get; set; }
+    public string? PayloadJson { get; set; }
 }

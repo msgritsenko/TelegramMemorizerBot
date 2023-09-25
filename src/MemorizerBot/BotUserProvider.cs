@@ -1,6 +1,6 @@
 ﻿using Domain;
 
-namespace MemorizerBot.Widgets;
+namespace MemorizerBot;
 
 public class BotUserProvider
 {
