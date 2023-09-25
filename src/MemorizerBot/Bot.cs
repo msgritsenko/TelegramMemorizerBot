@@ -85,6 +85,16 @@ internal class Bot
                     }
                 }
 
+                if (originalMsg.Type == BotReplyableMessageType.NewCard)
+                {
+                    if (!await db.Questions.AnyAsync(c => c.Query == message.Text))
+                    {
+                        await db.Questions.AddAsync(new BotQuestion { Query = message.Text, BotChannelid = originalMsg.Payload, });
+
+                        await db.SaveChangesAsync();
+                    }
+                }
+
                 return;
             }
 

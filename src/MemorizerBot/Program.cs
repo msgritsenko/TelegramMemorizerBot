@@ -55,7 +55,7 @@ var bot = await BotBuilder.Build(
         var start = new BotCommand() { Command = "/start", Description = "Start memorize cards" };
         var addChannel = new BotCommand() { Command = "/addchannel", Description = "Add new channel" };
         var selectChannels = new BotCommand() { Command = "/selectchannels", Description = "Select favorite channels" };
-        var addCard = new BotCommand() { Command = "/addcard", Description = "Add new card" };
+        //var addCard = new BotCommand() { Command = "/addcard", Description = "Add new card" };
 
         bot.GlobalCommands.Add((start, (bot, scope) => bot.Start<WorkWidget>(scope)));
         bot.GlobalCommands.Add((addChannel, (bot, scope) => bot.Start<AddChannelWidget>(scope)));

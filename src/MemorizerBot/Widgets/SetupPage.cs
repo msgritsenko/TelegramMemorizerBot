@@ -12,17 +12,20 @@ internal class SetupPage : BotWidget
     private readonly BotChannelRepository _channelRepository;
     private readonly BotUser _user;
     private readonly BotDbContext _dbContext;
+    private readonly BotReplyableMessagesRepository _replyableMsgRepository;
 
     public SetupPage(
         BotChannelRepository channelRepository,
         BotUserProvider userProvider,
         ITelegramBotClient botClient,
-        BotDbContext dbContext)
+        BotDbContext dbContext,
+        BotReplyableMessagesRepository replyableMsgRepository)
         : base(botClient)
     {
         _channelRepository = channelRepository;
         _user = userProvider.CurrentUser;
         _dbContext = dbContext;
+        _replyableMsgRepository = replyableMsgRepository;
     }
 
     public override async Task Start()
@@ -49,6 +52,7 @@ internal class SetupPage : BotWidget
         new[]
         {
         InlineKeyboardButton.WithCallbackData(text: "стоп", callbackData: BuildCallBack(nameof(Quit), channelId)),
+        InlineKeyboardButton.WithCallbackData(text: "+ card", callbackData: BuildCallBack(nameof(NewCard), channelId)),
         InlineKeyboardButton.WithCallbackData(text: "следить", callbackData: BuildCallBack(nameof(Star), channelId)),
         InlineKeyboardButton.WithCallbackData(text: "дальше", callbackData: BuildCallBack(nameof(Next), channelId)),
         }
@@ -58,6 +62,7 @@ internal class SetupPage : BotWidget
         new[]
         {
         InlineKeyboardButton.WithCallbackData(text: "стоп", callbackData: BuildCallBack(nameof(Quit), channelId)),
+        InlineKeyboardButton.WithCallbackData(text: "+ card", callbackData: BuildCallBack(nameof(NewCard), channelId)),
         InlineKeyboardButton.WithCallbackData(text: "забыть", callbackData: BuildCallBack(nameof(UnStar), channelId)),
         InlineKeyboardButton.WithCallbackData(text: "дальше", callbackData: BuildCallBack(nameof(Next), channelId)),
         }
@@ -68,12 +73,29 @@ internal class SetupPage : BotWidget
         return botCallback.Action switch
         {
             nameof(Quit) => Quit(botCallback.GetPayload<int>(), callbackQuery),
+            nameof(NewCard) => NewCard(botCallback.GetPayload<int>(), callbackQuery),
             nameof(Next) => Next(botCallback.GetPayload<int>(), callbackQuery),
             nameof(Star) => Star(botCallback.GetPayload<int>(), callbackQuery),
             nameof(UnStar) => UnStar(botCallback.GetPayload<int>(), callbackQuery),
 
             _ => Task.CompletedTask,
         };
+    }
+
+    private async Task NewCard(int currentQuestionId, CallbackQuery callbackQuery)
+    {
+        BotChannel channel = _channelRepository.GetById(currentQuestionId);
+
+        Message sentMessage = await _botClient.SendTextMessageAsync(
+              chatId: _user.ChatId,
+              text: $"Чтобы создать новую карточку в канал {channel.Name}, ответьте карточку этому сообщению.");
+
+        _replyableMsgRepository.Add(msg =>
+        {
+            msg.MessageId = sentMessage.MessageId;
+            msg.Type = BotReplyableMessageType.NewCard;
+            msg.Payload = currentQuestionId;
+        });
     }
 
     private async Task Next(int currentQuestionId, CallbackQuery callbackQuery)
