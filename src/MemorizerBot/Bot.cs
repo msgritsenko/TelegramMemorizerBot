@@ -27,6 +27,19 @@ internal class Bot
         await widget.Start();
     }
 
+    public async Task HandleUpdateAsyncSafe(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await HandleUpdateAsync(botClient, update, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+
+    }
+
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         if (update.CallbackQuery is { } callback)
@@ -71,6 +84,7 @@ internal class Bot
                 {
                     var question = questionsRepository.GetById(originalMsg.Payload);
                     question.Query = message.Text;
+                    question.Entities = message.Entities?.ToList() ?? new List<MessageEntity>();
 
                     await db.SaveChangesAsync();
                 }
@@ -87,12 +101,17 @@ internal class Bot
 
                 if (originalMsg.Type == BotReplyableMessageType.NewCard)
                 {
-                    if (!await db.Questions.AnyAsync(c => c.Query == message.Text))
+                    if (await db.Questions.AnyAsync(c => c.Query == message.Text)) 
+                        return;
+                    
+                    await db.Questions.AddAsync(new BotQuestion
                     {
-                        await db.Questions.AddAsync(new BotQuestion { Query = message.Text, BotChannelid = originalMsg.Payload, });
+                        Query = message.Text, 
+                        BotChannelid = originalMsg.Payload,
+                        Entities = message.Entities?.ToList() ?? new List<MessageEntity>(),
+                    });
 
-                        await db.SaveChangesAsync();
-                    }
+                    await db.SaveChangesAsync();
                 }
 
                 return;

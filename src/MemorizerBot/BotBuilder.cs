@@ -63,7 +63,7 @@ internal static class BotBuilder
         Console.WriteLine($"Start listening for @{me.Username}");
 
         botClient.StartReceiving(
-            updateHandler: result.HandleUpdateAsync,
+            updateHandler: result.HandleUpdateAsyncSafe,
             pollingErrorHandler: result.HandlePollingErrorAsync,
             receiverOptions: receiverOptions,
             cancellationToken: ct

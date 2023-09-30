@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /src/memorizerBot.db-shm
 /src/memorizerBot.db-wal
+.idea/

@@ -14,4 +14,11 @@ public class BotDbContext : DbContext
         : base(dbContextOptions)
     {
     }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BotDbContext).Assembly);
+    }
 }

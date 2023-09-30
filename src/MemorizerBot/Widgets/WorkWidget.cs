@@ -50,6 +50,7 @@ internal class WorkWidget : BotWidget
         Message sentMessage = await _botClient.SendTextMessageAsync(
               chatId: _user.ChatId,
               text: question.Query,
+              entities: question.Entities,
               //parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
               replyMarkup: inlineKeyboard);
 
