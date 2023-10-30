@@ -5,6 +5,7 @@ using MemorizerBot.Widgets;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Persistance;
 using Telegram.Bot.Types;
 
@@ -49,7 +50,7 @@ var bot = await BotBuilder.Build(
     {
         BotDbContext db = container.Resolve<BotDbContext>();
         db.Database.EnsureCreated();
-    }, 
+    },
     configureBotCommands: bot =>
     {
         var start = new BotCommand() { Command = "/start", Description = "Start memorize cards" };
@@ -68,7 +69,16 @@ bot.Widgets.Add(typeof(WorkWidget));
 bot.Widgets.Add(typeof(AddChannelWidget));
 bot.Widgets.Add(typeof(SetupPage));
 
-Console.ReadLine();
 
-// Send cancellation request to stop bot
-cts.Cancel();
+IHost host = Host.CreateDefaultBuilder(args)
+    .UseSystemd()
+    .ConfigureServices(services =>
+    {
+        
+    })
+    .UseConsoleLifetime()
+    .Build();
+
+
+await host.RunAsync();
+
