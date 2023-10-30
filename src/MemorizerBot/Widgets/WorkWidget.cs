@@ -91,6 +91,8 @@ internal class WorkWidget : BotWidget
                messageId: callbackQuery.Message.MessageId,
 
                text: question.Query,
+               entities: question.Entities,
+
                //parseMode: Telegram.Bot.Types.Enums.ParseMode.te,
                replyMarkup: inlineKeyboard);
 
@@ -110,6 +112,8 @@ internal class WorkWidget : BotWidget
                messageId: callbackQuery.Message.MessageId,
 
                text: lastQuestion.Query,
+               entities: lastQuestion.Entities,
+
                //parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                replyMarkup: null);
     }
