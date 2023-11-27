@@ -21,9 +21,10 @@ internal static class BotBuilder
         CancellationToken ct)
     {
         var config = new ConfigurationBuilder()
-       .AddUserSecrets<Program>()
-       .AddJsonFile("appsettings.json", true)
-       .Build();
+            .AddEnvironmentVariables()
+            .AddUserSecrets<Program>()
+            .AddJsonFile("appsettings.json", true)
+            .Build();
 
         string telegramKey = telegramKeyExtractor(config);
 

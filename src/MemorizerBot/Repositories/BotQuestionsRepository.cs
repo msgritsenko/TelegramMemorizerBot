@@ -17,18 +17,20 @@ internal class BotQuestionsRepository
         if (channels.Count == 0)
             return null;
 
+        var channelIds = channels.Select(i => i.Id).ToList();
+
         for (int i = 0; i < 10; ++i)
         {
-            int randomChannel = Random.Shared.Next(0, channels.Count);
+            var question = _dbContext.Questions
+                .Where(q => channelIds.Contains(q.BotChannelid))
+                .Where(q => q.Id > currentQuestionId)
+                .OrderBy(q => q.Id)
+                .FirstOrDefault();
 
-            var channel = channels.Skip(randomChannel).FirstOrDefault();
-
-            var question = GetNextQuestion(channel);
-
-            if (question != null && question.Id != currentQuestionId)
-            {
+            if (question == null)
+                currentQuestionId = -1;
+            else
                 return question;
-            }
         }
 
         return null;

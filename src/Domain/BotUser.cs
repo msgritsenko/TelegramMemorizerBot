@@ -7,4 +7,6 @@ public class BotUser
     public long ChatId { get; set; }
 
     public List<BotChannel> Channels { get; set; } = new();
+    
+    public int LastQuestionId { get; set; }
 }

@@ -6,6 +6,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Migrations.SQLite;
 using Persistance;
 using Telegram.Bot.Types;
 
@@ -22,7 +23,9 @@ var bot = await BotBuilder.Build(
             if (!string.IsNullOrEmpty(sqLitePath))
             {
                 options = options
-                    .UseSqlite($"Data Source={sqLitePath}");
+                    .UseSqlite($"Data Source={sqLitePath}", o => o
+                        .MigrationsAssembly(typeof(BloggingContextFactory).Assembly.FullName)
+                        .MigrationsHistoryTable("__EFMigrationsHistory"));
             }
             else
             {
@@ -49,7 +52,13 @@ var bot = await BotBuilder.Build(
     preStartAction: (container, cfg) =>
     {
         BotDbContext db = container.Resolve<BotDbContext>();
-        db.Database.EnsureCreated();
+        
+        string? sqLitePath = cfg["SQLitePath"];
+
+        if (!string.IsNullOrEmpty(sqLitePath))
+            db.Database.Migrate();
+        else
+            db.Database.EnsureCreated();
     },
     configureBotCommands: bot =>
     {
