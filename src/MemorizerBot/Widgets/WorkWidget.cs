@@ -12,17 +12,20 @@ internal class WorkWidget : BotWidget
     private readonly BotReplyableMessagesRepository _replyableMsgRepository;
     private readonly BotQuestionsRepository _questionsRepository;
     private readonly BotUser _user;
+    private readonly BotUserRepository _userRepository;
 
     public WorkWidget(
         BotReplyableMessagesRepository replyableMsgRepository,
         BotQuestionsRepository questionsRepository,
         BotUserProvider userProvider,
+        BotUserRepository userRepository,
         ITelegramBotClient botClient)
         : base(botClient)
     {
         _replyableMsgRepository = replyableMsgRepository;
         _questionsRepository = questionsRepository;
         _user = userProvider.CurrentUser;
+        _userRepository = userRepository;
     }
 
     public override async Task Start()
@@ -30,7 +33,7 @@ internal class WorkWidget : BotWidget
         // получить новый вопрос
         // сформировать навигационные меню
         // отправить сообщение
-        BotQuestion? question = _questionsRepository.GetNextQuestion(_user.Channels, 0);
+        BotQuestion? question = _questionsRepository.GetNextQuestion(_user.Channels, _user.LastQuestionId);
 
         if (question == null)
         {
@@ -76,6 +79,7 @@ internal class WorkWidget : BotWidget
     private async Task Next(int currentQuestionId, CallbackQuery callbackQuery)
     {
         var question = _questionsRepository.GetNextQuestion(_user.Channels, currentQuestionId);
+        _userRepository.UpdateLastQuestion(_user.Id, question.Id);
 
         InlineKeyboardMarkup inlineKeyboard = new(new[]
         {

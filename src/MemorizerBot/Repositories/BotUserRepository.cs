@@ -22,6 +22,15 @@ internal class BotUserRepository
         return user;
     }
 
+    public void UpdateLastQuestion(long userId, int lastQuestionId)
+    {
+        BotUser user = _dbContext.Users
+            .Single(u => u.Id == userId);
+
+        user.LastQuestionId = lastQuestionId;
+        _dbContext.SaveChanges();
+    }
+
     public BotUser GetOrCreate(long userId, long chatId)
     {
         BotUser? user = _dbContext.Users
