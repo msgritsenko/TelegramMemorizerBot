@@ -83,7 +83,7 @@ internal class Bot
                 if (originalMsg.Type == BotReplyableMessageType.ShowedCard)
                 {
                     var question = questionsRepository.GetById(originalMsg.Payload);
-                    question.Query = message.Text;
+                    question.Query = WorkWidget.RemoveChannelQuestion(question, message.Text);
                     question.Entities = message.Entities?.ToList() ?? new List<MessageEntity>();
 
                     await db.SaveChangesAsync();

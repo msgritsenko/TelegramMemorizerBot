@@ -1,6 +1,5 @@
 ﻿using Domain;
 using MemorizerBot.Repositories;
-using System;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -52,7 +51,7 @@ internal class WorkWidget : BotWidget
 
         Message sentMessage = await _botClient.SendTextMessageAsync(
               chatId: _user.ChatId,
-              text: question.Query,
+              text: ChannelQuestion(question),
               entities: question.Entities,
               //parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
               replyMarkup: inlineKeyboard);
@@ -63,6 +62,14 @@ internal class WorkWidget : BotWidget
             msg.Payload = question.Id;
             msg.Type = BotReplyableMessageType.ShowedCard;
         });
+    }
+
+    public static string ChannelQuestion(BotQuestion question)
+        => $"# {question.Channel.Name}\n\n{question.Query}";
+
+    public static string RemoveChannelQuestion(BotQuestion question, string query)
+    {
+        return query.Replace($"# {question.Channel.Name}\n\n", string.Empty);
     }
 
     public override Task Callback(BotCallbackData botCallback, CallbackQuery callbackQuery)
@@ -94,7 +101,7 @@ internal class WorkWidget : BotWidget
                chatId: _user.ChatId,
                messageId: callbackQuery.Message.MessageId,
 
-               text: question.Query,
+               text: ChannelQuestion(question),
                entities: question.Entities,
 
                //parseMode: Telegram.Bot.Types.Enums.ParseMode.te,
@@ -110,12 +117,11 @@ internal class WorkWidget : BotWidget
     {
         var lastQuestion = _questionsRepository.GetById(currentQuestionId);
 
-
         Message sentMessage = await _botClient.EditMessageTextAsync(
                chatId: _user.ChatId,
                messageId: callbackQuery.Message.MessageId,
 
-               text: lastQuestion.Query,
+               text: ChannelQuestion(lastQuestion),
                entities: lastQuestion.Entities,
 
                //parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,

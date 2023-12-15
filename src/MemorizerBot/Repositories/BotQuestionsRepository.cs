@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Microsoft.EntityFrameworkCore;
 using Persistance;
 
 namespace MemorizerBot.Repositories;
@@ -22,6 +23,7 @@ internal class BotQuestionsRepository
         for (int i = 0; i < 10; ++i)
         {
             var question = _dbContext.Questions
+                .Include(q => q.Channel)
                 .Where(q => channelIds.Contains(q.BotChannelid))
                 .Where(q => q.Id > currentQuestionId)
                 .OrderBy(q => q.Id)
@@ -39,6 +41,7 @@ internal class BotQuestionsRepository
     internal BotQuestion? GetById(int questionId)
     {
         return _dbContext.Questions
+            .Include(c => c.Channel)
             .Where(c => c.Id == questionId)
             .FirstOrDefault();
     }

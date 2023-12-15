@@ -134,11 +134,13 @@ namespace Migrations.SQLite.Migrations
 
             modelBuilder.Entity("Domain.BotQuestion", b =>
                 {
-                    b.HasOne("Domain.BotChannel", null)
+                    b.HasOne("Domain.BotChannel", "Channel")
                         .WithMany()
                         .HasForeignKey("BotChannelid")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Channel");
                 });
 #pragma warning restore 612, 618
         }
